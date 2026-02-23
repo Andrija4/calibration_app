@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block content %}
+<a href="/create">Add equipment</a>
+<table border="1">
+    <tr>
+        <th>Name</th>
+        <th>Brose SAP Number</th>
+        <th>Serial Number</th>
+        <th>Location</th>
+        <th>Responsible Person</th>
+        <th>Last Calibration</th>
+        <th>Next Calibration</th>
+        <th>Calibration Location</th>
+        <th>Calibration Provider</th>
+        <th>Price of Calibration (€)</th>
+        <th>Status</th>
+        <th>Calibrate</th>
+        <th>Delete</th>
+        <th>Edit</th>
+    </tr>
+    {% for eq in equipment %}
+    <tr id="row-{{ eq.id }}">
+        <td>{{ eq.name }}</td>
+        <td>{{ eq.brose_sap }}</td>
+        <td>{{ eq.serial_number }}</td>
+        <td>{{ eq.location }}</td>
+        <td>{{ eq.responsible_person }}</td>
+        <td>{{ eq.last_calibration }}</td>
+        <td id="next-calibration-{{ eq.id }}">{{ eq.next_calibration }}</td>
+        <td>{{ eq.calibration_location }}</td>
+        <td>{{ eq.calibration_provider }}</td>
+        <td>{{ eq.calibration_price }}</td>
+        <td id="status-{{ eq.id }}">{{ eq.status }}</td>
+        <td>
+            <form method="POST" action="/calibrate/{{ eq.id }}" style="display:inline;">
+                <button type="submit">Calibrate</button>
+            </form>
+        </td>
+        <td>
+            <form method="POST" action="/delete/{{ eq.id }}" style="display:inline;">
+                <button type="submit">Delete</button>
+            </form>
+        </td>
+        <td>
+            <a href="/edit/{{ eq.id }}">Edit</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<script>
+    const ws = new WebSocket(`ws://${window.location.host}/ws`);
+    
+    ws.onmessage = function(event) {
+        const statusData = JSON.parse(event.data);
+        statusData.forEach(item => {
+            const statusCell = document.getElementById(`status-${item.id}`);
+            const nextCalibrationCell = document.getElementById(`next-calibration-${item.id}`);
+            
+            if (statusCell) {
+                statusCell.textContent = item.status;
+                // Add color coding based on status
+                if (item.status === "EXPIRED") {
+                    statusCell.style.color = "red";
+                    statusCell.style.fontWeight = "bold";
+                } else if (item.status === "DUE SOON") {
+                    statusCell.style.color = "orange";
+                    statusCell.style.fontWeight = "bold";
+                } else {
+                    statusCell.style.color = "green";
+                    statusCell.style.fontWeight = "normal";
+                }
+            }
+            
+            if (nextCalibrationCell) {
+                nextCalibrationCell.textContent = item.next_calibration;
+            }
+        });
+    };
+    
+    ws.onerror = function(event) {
+        console.error("WebSocket error:", event);
+    };
+    
+    ws.onclose = function(event) {
+        console.log("WebSocket closed, reconnecting in 3 seconds...");
+        setTimeout(function() {
+            location.reload();
+        }, 3000);
+    };
+</script>
+{% endblock %}
+ 

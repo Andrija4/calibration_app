@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<form method="post">
+    Name of Equipment: <input type="text" name="name"><br>
+    Brose SAP Number: <input type="text" name="brose_sap"><br>
+    Serial Number: <input type="text" name="serial_number"><br>
+    Location: <select type="text" name="location" id="location">
+        <option value="AEL Laboratory">AEL Laboratory</option>
+        <option value="HW Office">HW Office</option>
+        <option value="Pulse Generator">Pulse Generator</option>
+    </select><br>
+    Responsible Person: <input type="text" name="responsible_person" value="None"><br>
+    Last Calibration: <input type="date" name="last_calibration"><br>
+    Interval (days): <input type="number" name="interval_days"><br>
+    Calibration Location: <select type="text" name="calibration_location" id="calibration_location">
+        <option value="EX">External</option>
+        <option value="IN">Internal</option>
+        <option value="ET">Etalon</option>
+        <option value="SP">Supplier</option>
+    </select><br>
+    Name of Calibration Provider: <input type="text" name="calibration_provider" value="None"><br>
+    Price of Calibration: <input type="number" name="calibration_price" step="0.01">€<br>
+    <button type="submit">Save</button>
+</form>
+{% endblock %}
