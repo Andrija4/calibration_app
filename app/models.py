@@ -1,6 +1,9 @@
-from sqlalchemy import Column, Integer, String, Date
+from sqlalchemy import Column, Integer, String, Date, Boolean
 from datetime import date, timedelta
 from .database import Base
+from .mailing.mailer import Mailer
+
+mailer = Mailer()  # Initialize the mailer to ensure the database is set up
 
 class Equipment(Base):
     __tablename__ = "equipment"
@@ -16,6 +19,9 @@ class Equipment(Base):
     calibration_location = Column(String, nullable=False)
     calibration_provider = Column(String, nullable=True)
     calibration_price = Column(Integer, nullable=False)
+    email_sent_30_days = Column(Boolean, default=False)
+    email_sent_7_days = Column(Boolean, default=False)
+    email_sent_expired = Column(Boolean, default=False)
 
     @property
     def next_calibration(self):

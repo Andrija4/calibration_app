@@ -22,6 +22,11 @@ def calibrate_equipment(db: Session, equipment_id: int):
     equipment = db.query(models.Equipment).filter(models.Equipment.id == equipment_id).first()
     if equipment:
         equipment.last_calibration = date.today()
+        # Reset flag so email can be sent again if needed
+        equipment.email_sent_30_days = False
+        equipment.email_sent_7_days = False
+        equipment.email_sent_expired = False
+
         db.commit()
         db.refresh(equipment)
     return equipment
@@ -34,6 +39,11 @@ def update_equipment(db: Session, equipment_id: int, equipment_data: schemas.Equ
     if equipment:
         for key, value in equipment_data.dict().items():
             setattr(equipment, key, value)
+        # Reset email_sent flag if last_calibration is being updated
+        if 'last_calibration' in equipment_data.dict():
+            equipment.email_sent_30_days = False
+            equipment.email_sent_7_days = False
+            equipment.email_sent_expired = False
         db.commit()
         db.refresh(equipment)
     return equipment

@@ -5,14 +5,12 @@ from fastapi.responses import RedirectResponse
 from datetime import date
 import asyncio
 import json
-from ..mailing.mailer import Mailer
 
 from ..database import SessionLocal, SessionLocalMail
 from .. import crud, schemas
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
-mailer = Mailer()  # Initialize the mailer to ensure the database is set up
 
 class ConnectionManager:
     def __init__(self):
@@ -41,7 +39,7 @@ def get_equpiment_db():
     finally:
         db.close()
 
-def get_db_mail():
+def get_mail_db():
     db = SessionLocalMail()
     try:
         yield db
@@ -61,7 +59,6 @@ def read_equipment(request: Request, db: Session = Depends(get_equpiment_db)):
 
 @router.get("/create")
 def create_form(request: Request):
-    mailer.send_email(subject="Test", body="This is a test email to verify the mailing functionality.")
     return templates.TemplateResponse("create_equipment.html", {"request": request})
 
 @router.post("/create")
@@ -156,14 +153,14 @@ def update_equipment(
     return RedirectResponse(url="/", status_code=303)
 
 @router.get("/mailing")
-def create_mail_form(request: Request, db: Session = Depends(get_db_mail)):
+def create_mail_form(request: Request, db: Session = Depends(get_mail_db)):
     recipients = crud.get_all_mail(db)
     return templates.TemplateResponse("mailing.html", {"request": request, "recipients": recipients})
 
 @router.post("/add_mail")
 def add_mail(
     email: str = Form(...),
-    db: Session = Depends(get_db_mail)
+    db: Session = Depends(get_mail_db)
 ):
     '''
     Add a new mail entry to the mailing database.
@@ -173,7 +170,7 @@ def add_mail(
     return RedirectResponse(url="/mailing", status_code=303)
 
 @router.post("/delete_mail/{mail_id}")
-def delete_mail(mail_id: int, db: Session = Depends(get_db_mail)):
+def delete_mail(mail_id: int, db: Session = Depends(get_mail_db)):
     mail_entry = db.query(crud.models.Mail).filter(crud.models.Mail.id == mail_id).first()
     if mail_entry:
         db.delete(mail_entry)
@@ -185,6 +182,9 @@ async def websocket_endpoint(websocket: WebSocket):
     '''
     WebSocket endpoint to send real-time status updates to clients.
     '''
+    from ..mailing.mailer import Mailer
+    mailer = Mailer()
+    
     await manager.connect(websocket)
     try:
         while True:
@@ -192,16 +192,36 @@ async def websocket_endpoint(websocket: WebSocket):
             await asyncio.sleep(5)
             db = SessionLocal()
             equipment_list = crud.get_all_equipment(db)
-            db.close()
             
             status_data = []
             for eq in equipment_list:
+                status = eq.status
+                days_left = (eq.next_calibration - date.today()).days
+                
+                # Handle email sending with proper database commits
+                if days_left < 0:
+                    if not eq.email_sent_expired:
+                        mailer.send_email(subject="Calibration Expired", body=f"The calibration for {eq.name} serial number: {eq.serial_number}, sap: {eq.brose_sap} has expired. Please take immediate action.")
+                        eq.email_sent_expired = True
+                        db.commit()
+                elif days_left <= 7:
+                    if not eq.email_sent_7_days:
+                        mailer.send_email(subject="Calibration Due Soon", body=f"The calibration for {eq.name} serial number: {eq.serial_number}, sap: {eq.brose_sap} is due in {days_left} days.")
+                        eq.email_sent_7_days = True
+                        db.commit()
+                elif days_left <= 30:
+                    if not eq.email_sent_30_days:
+                        mailer.send_email(subject="Calibration Due Soon", body=f"The calibration for {eq.name} serial number: {eq.serial_number}, sap: {eq.brose_sap} is due in {days_left} days.")
+                        eq.email_sent_30_days = True
+                        db.commit()
+                
                 status_data.append({
                     "id": eq.id,
-                    "status": eq.status,
+                    "status": status,
                     "next_calibration": str(eq.next_calibration)
                 })
             
+            db.close()
             await manager.broadcast(json.dumps(status_data))
     except WebSocketDisconnect:
         manager.disconnect(websocket)
