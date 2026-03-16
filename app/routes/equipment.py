@@ -5,12 +5,21 @@ from fastapi.responses import RedirectResponse
 from datetime import date
 import asyncio
 import json
+import os
+import sys
 
 from ..database import SessionLocal, SessionLocalMail
 from .. import crud, schemas
 
+def get_base_path():
+    # If running as an .exe, use the temporary folder PyInstaller creates
+    if hasattr(sys, '_MEIPASS'):
+        return sys._MEIPASS
+    # Otherwise, use the normal folder
+    return os.path.abspath(".")
+
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
+templates = Jinja2Templates(directory=os.path.join(get_base_path(), "app/templates"))
 
 class ConnectionManager:
     def __init__(self):
