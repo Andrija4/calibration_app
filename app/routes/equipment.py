@@ -210,17 +210,20 @@ async def websocket_endpoint(websocket: WebSocket):
                 # Handle email sending with proper database commits
                 if days_left < 0:
                     if not eq.email_sent_expired:
-                        mailer.send_email(subject="Calibration Expired", body=f"The calibration for {eq.name} serial number: {eq.serial_number}, sap: {eq.brose_sap} has expired. Please take immediate action.")
+                        mailer.send_email(subject="Kalibracija opreme istekla", 
+                                          body=f"Sledecu opremu je potrebno kalibrisati:\n\n- {eq.name} - SAP: {eq.brose_sap} - Serijski broj: {eq.serial_number}\n\nOdgovorna osoba je duzna da je pripremi i odnese u laboratoriju kvaliteta na kalibraciju.\nSlikati svu opremu, kao dokaz, ukljucujuci i napojne kablove pre odnosenja u laboratoriju kvaliteta.\nSlike kao i mail obavestenja poslati Tamari Antonijevic ili odgovornoj osobi kvaliteta sa tacnim datumima donosenja.\n\nHvala unapred!")
                         eq.email_sent_expired = True
                         db.commit()
                 elif days_left <= 7:
                     if not eq.email_sent_7_days:
-                        mailer.send_email(subject="Calibration Due Soon", body=f"The calibration for {eq.name} serial number: {eq.serial_number}, sap: {eq.brose_sap} is due in {days_left} days.")
+                        mailer.send_email(subject="7 dana do isteka kalibracije", 
+                                          body=f"Sledecu opremu je potrebno kalibrisati:\n\n- {eq.name} - SAP: {eq.brose_sap} - Serijski broj: {eq.serial_number}\n\nOdgovorna osoba je duzna da je pripremi i odnese u laboratoriju kvaliteta na kalibraciju.\nSlikati svu opremu, kao dokaz, ukljucujuci i napojne kablove pre odnosenja u laboratoriju kvaliteta.\nSlike kao i mail obavestenja poslati Tamari Antonijevic ili odgovornoj osobi kvaliteta sa tacnim datumima donosenja.\n\nHvala unapred!")
                         eq.email_sent_7_days = True
                         db.commit()
                 elif days_left <= 30:
                     if not eq.email_sent_30_days:
-                        mailer.send_email(subject="Calibration Due Soon", body=f"The calibration for {eq.name} serial number: {eq.serial_number}, sap: {eq.brose_sap} is due in {days_left} days.")
+                        mailer.send_email(subject="30 dana do isteka kalibracije", 
+                                          body=f"Sledecu opremu je potrebno kalibrisati:\n\n- {eq.name} - SAP: {eq.brose_sap} - Serijski broj: {eq.serial_number}\n\nOdgovorna osoba je duzna da je pripremi i odnese u laboratoriju kvaliteta na kalibraciju.\nSlikati svu opremu, kao dokaz, ukljucujuci i napojne kablove pre odnosenja u laboratoriju kvaliteta.\nSlike kao i mail obavestenja poslati Tamari Antonijevic ili odgovornoj osobi kvaliteta sa tacnim datumima donosenja.\n\nHvala unapred!")
                         eq.email_sent_30_days = True
                         db.commit()
                 
